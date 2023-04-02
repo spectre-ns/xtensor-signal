@@ -53,9 +53,15 @@ jobs:
       working-directory: build/test
       run: ./test_xtensor_signal
 
- example-2-win:
-    name: Ex2 Windows
-    runs-on: "windows-latest"
+  windows:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [windows-latest]
+
+    name: ${{ matrix.runs-on }} • x64 ${{ matrix.args }}
+    runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: conda-incubator/setup-miniconda@v2
         with:
