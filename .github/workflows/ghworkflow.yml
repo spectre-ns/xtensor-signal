@@ -78,7 +78,8 @@ jobs:
           ninja
     - name: Print Conda
       shell: cmd /C call {0}
-      run:  conda info \nconda list
+      run: conda info
+      run: conda list
 
     - name: Configure using CMake
       shell: cmd /C call {0}
