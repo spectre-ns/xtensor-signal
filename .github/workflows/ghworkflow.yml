@@ -67,19 +67,25 @@ jobs:
 
       - name: Install Conda environment from environment.yml
         uses: mamba-org/provision-with-micromamba@main
+              with:
+        environment-name: myenv
+        environment-file: environment-dev.yml
+        cache-env: true
+        extra-specs: |
+          ninja
 
       # Linux and macOS
       - name: Run Python
         shell: bash -l {0}
         run: |
-          python -c "import numpy"
+          micromamba info && micromamba list
 
       # Windows
       # With Powershell:
       - name: Run Python
         shell: powershell
         run: |
-          python -c "import numpy"
+          micromamba info && micromamba list
       # Or with cmd:
       - name: Run cmd.exe
         shell: cmd /C CALL {0}
