@@ -8,6 +8,7 @@ dependencies:
   # Host dependencies
   - xsimd
   - xtensor=0.24.6
+  - xtensor-io
   - xtensor-blas
   - lapack
   - openblas

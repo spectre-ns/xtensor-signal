@@ -20,6 +20,9 @@ if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 
     find_package(xtensor-signal REQUIRED CONFIG)
     set(XTENSOR_SIGNAL_INCLUDE_DIR ${xtensor-signal_INCLUDE_DIRS})
+
+    find_package(xtensor-io REQUIRED)
+    set(XTENSOR_IO_INCLUDE_DIR ${xtensor_io_INCLUDE_DIRS})
 endif ()
 
 include(CheckCXXCompilerFlag)
