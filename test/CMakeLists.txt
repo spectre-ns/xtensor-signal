@@ -29,21 +29,7 @@ include(CheckCXXCompilerFlag)
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" U_CMAKE_BUILD_TYPE)
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -Wunused-parameter -Wextra -Wreorder -Wconversion -fvisibility=hidden")
-    CHECK_CXX_COMPILER_FLAG("-std=c++20" HAS_CPP20_FLAG)
-
-    if (HAS_CPP20_FLAG)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
-    else()
-        message(FATAL_ERROR "Unsupported compiler -- xtensor-signal requires C++20 support!")
-    endif()
-endif()
-
-if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /MP /bigobj /std:c++20")
-    set(CMAKE_EXE_LINKER_FLAGS /MANIFEST:NO)
-endif()
+set (CMAKE_CXX_STANDARD 20)
 
 find_package(ZLIB REQUIRED)
 find_package(doctest REQUIRED)
