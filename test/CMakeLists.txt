@@ -31,12 +31,12 @@ string(TOUPPER "${CMAKE_BUILD_TYPE}" U_CMAKE_BUILD_TYPE)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Intel")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -Wunused-parameter -Wextra -Wreorder -Wconversion -fvisibility=hidden")
-    CHECK_CXX_COMPILER_FLAG("-std=c++20" HAS_CPP20_FLAG)
+    CHECK_CXX_COMPILER_FLAG("-std=c++14" HAS_CPP14_FLAG)
 
-    if (HAS_CPP20_FLAG)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
+    if (HAS_CPP14_FLAG)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
     else()
-        message(FATAL_ERROR "Unsupported compiler -- xtensor-signal requires C++20 support!")
+        message(FATAL_ERROR "Unsupported compiler -- xtensor-signal requires C++14 support!")
     endif()
 endif()
 
@@ -45,6 +45,7 @@ if(MSVC)
     set(CMAKE_EXE_LINKER_FLAGS /MANIFEST:NO)
 endif()
 
+find_package(ZLIB REQUIRED)
 find_package(doctest REQUIRED)
 find_package(Threads)
 
@@ -58,7 +59,7 @@ set(XTENSOR_SIGNAL_TESTS
 )
 
 add_executable(test_xtensor_signal ${XTENSOR_SIGNAL_TESTS} ${XTENSOR_SIGNAL_HEADERS})
-target_link_libraries(test_xtensor_signal PRIVATE xtensor-signal doctest::doctest ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_xtensor_signal PRIVATE ZLIB::ZLIB xtensor-signal doctest::doctest ${CMAKE_THREAD_LIBS_INIT})
 
 add_custom_target(xtest COMMAND ./test_xtensor_signal DEPENDS test_xtensor_signal)
 

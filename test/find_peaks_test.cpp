@@ -25,10 +25,10 @@ TEST_SUITE("find_peaks")
 		auto peaks = xt::signal::find_peaks(y);
 
 		//assert that we have one peak
-		ASSERT_TRUE(peaks.shape(0) == 1);
+		REQUIRE(peaks.shape(0) == 1);
 
 		//assert that the value is x = 0
-		ASSERT_NEAR(x(peaks(0)), 1, 1e-3);
+		REQUIRE(x(peaks(0)) == doctest::Approx(1.0).epsilon(1e-3));
 	}
 
 	TEST_CASE("RandNoise")
@@ -66,15 +66,15 @@ TEST_SUITE("find_peaks")
 		auto peaks = xt::signal::find_peaks(y);
 
 		//assert that we have two peaks
-		ASSERT_TRUE(peaks.shape(0) == 2);
+		REQUIRE(peaks.shape(0) == 2);
 
 		//assert that the value is x = 1
 		auto res = x(peaks(0));
-		ASSERT_NEAR(res, 1.0, 1e-3);
+		REQUIRE(res == doctest::Approx(1.0).epsilon(1e-3));
 
 		//assert that the value is x = 10
 		res = x(peaks(1));
-		ASSERT_NEAR(res, 10.0, 1e-3);
+		REQUIRE(res == doctest::Approx(10.0).epsilon(1e-3));
 	}
 
 	TEST_CASE("ecg_widths_prominance")
@@ -85,8 +85,8 @@ TEST_SUITE("find_peaks")
 		auto x = xt::load_npz<double>("test_data/ecg.npz", "data");
 		x = xt::view(x, xt::range(17000, 18000));
 		auto peaks = xt::signal::find_peaks(x, xt::xnone(), xt::xnone(), xt::xnone(), prominance, width);
-		ASSERT_EQ(peaks(0), 49);
-		ASSERT_EQ(peaks(1), 691);
+		REQUIRE(peaks(0) == 49);
+		REQUIRE(peaks(1) == 691);
 	}
 	
 	TEST_CASE("select_by_property")
@@ -94,11 +94,11 @@ TEST_SUITE("find_peaks")
 		size_t width = 20 ;
 		xt::xarray<size_t> widths = { 20, 21, 22, 10, 15 };
 		auto keep = xt::signal::detail::select_by_property(widths, width);
-		ASSERT_TRUE(keep(0));
-		ASSERT_TRUE(keep(1));
-		ASSERT_TRUE(keep(2));
-		ASSERT_FALSE(keep(3));
-		ASSERT_FALSE(keep(4));
+		REQUIRE(keep(0));
+		REQUIRE(keep(1));
+		REQUIRE(keep(2));
+		REQUIRE_FALSE(keep(3));
+		REQUIRE_FALSE(keep(4));
 	}
 
 	TEST_CASE("ecg_distance")
@@ -110,7 +110,7 @@ TEST_SUITE("find_peaks")
 		auto peaks = xt::signal::find_peaks(x, xt::xnone(),xt::xnone(), distance);
 		for (size_t i = 0; i < expectation.shape(0); i++)
 		{
-			ASSERT_EQ(peaks(i), expectation(i));
+			REQUIRE_EQ(peaks(i), expectation(i));
 		}
 	}
 }

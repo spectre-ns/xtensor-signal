@@ -32,4 +32,6 @@
 *.app
 /.vs
 /build
+/env
 /CMakeSettings.json
+.vscode/settings.json
