@@ -80,27 +80,27 @@ jobs:
       - name: Print Conda
         shell: powershell
         run: |
-        micromamba list
+          micromamba list
         
       - name: Configure using CMake
         shell: powershell
         run: |
-        cmake -Bbuild -G "Ninja" -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTS=ON
+          cmake -Bbuild -G "Ninja" -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTS=ON
 
       - name: Install
         shell: powershell
         working-directory: build
         run: |
-        cmake --install .
+          cmake --install .
 
       - name: Build xtensor-python
         shell: powershell
         working-directory: build
         run: |
-        cmake --build .
+          cmake --build .
 
       - name: Test xtensor-python
         shell: powershell
         working-directory: build/test
         run: |
-        ./test_xtensor_signal
+          ./test_xtensor_signal
