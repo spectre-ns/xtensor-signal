@@ -87,12 +87,6 @@ jobs:
         run: |
           cmake -Bbuild -G "Ninja" -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTS=ON
 
-      - name: Install
-        shell: powershell
-        working-directory: build
-        run: |
-          cmake --install .
-
       - name: Build xtensor-python
         shell: powershell
         working-directory: build
