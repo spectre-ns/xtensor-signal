@@ -1,16 +1,24 @@
 #ifndef XTENSOR_SIGNAL_FIND_PEAKS_HPP
 #define XTENSOR_SIGNAL_FIND_PEAKS_HPP
 
+#include <optional>
+#include <algorithm>
+#include <type_traits>
+#include <variant>
+
 #include <xtensor/xmath.hpp>
 #include <xtensor/xsort.hpp>
 #include <xtensor.hpp>
-#include <iostream>
-#include <algorithm>
-#include <type_traits>
+
 
 namespace xt {
     namespace signal {
         namespace detail {
+            template<typename ... Ts>                                                 
+            struct Overload : Ts ... { 
+                using Ts::operator() ...;
+            };
+            template<class... Ts> Overload(Ts...) -> Overload<Ts...>;
             template<
                 class E1,
                 class E2,
@@ -31,7 +39,7 @@ namespace xt {
                 // with `j` by order of `priority` while still maintaining the ability to
                 // step to neighbouring peaks with(`j` + 1) or (`j` - 1).
                 auto priority_to_position = xt::argsort(priority);
-                auto index = xt::eval(xt::arange<int>(peaks_size - 1, -1, -1));
+                auto index = xt::eval(xt::arange(peaks_size - 1, 0, -1));
                 // Highest priority first->iterate in reverse order(decreasing)
                 for(auto i : index) 
                 {
@@ -191,7 +199,7 @@ namespace xt {
              * @note Derived from https://github.com/scipy/scipy/blob/main/scipy/signal/_peak_finding.py
              */
             template<class E1>
-            auto arg_wlen_as_expected(E1&& value)
+            int arg_wlen_as_expected(E1&& value)
             {
                 //if the value is a none type
                 if constexpr (std::is_same<typename std::decay<E1>::type, decltype(xt::xnone())>::value)
@@ -208,7 +216,7 @@ namespace xt {
                     }
                 }
 
-               throw std::runtime_error("wlen must be greater thank 1");
+                throw std::runtime_error("wlen must be greater thank 1");
 
                 return 0;
             }
@@ -232,12 +240,8 @@ namespace xt {
              *     A window length in samples passed to `peak_prominences` as an optional
              *     argument for internal calculation of `prominence_data`. This argument
              *     is ignored if `prominence_data` is given.
-             * @returns
-             * widths The widths for each peak in samples.
-             * width_heights The height of the contour lines at which the `widths` where evaluated.
-             * left_ips, right_ips 
-                    Interpolated positions of left and right intersection points of a
-             *     horizontal line at the respective evaluation height.
+             * @returns widths The widths for each peak in samples. width_heights The height of the contour lines at which the `widths` where evaluated. left_ips, right_ips 
+                    Interpolated positions of left and right intersection points of a horizontal line at the respective evaluation height.
              * @note Derived from https://github.com/scipy/scipy/blob/main/scipy/signal/_peak_finding_utils.pyx
              */
             template <
@@ -419,42 +423,100 @@ namespace xt {
 
         /**
          * @brief finds all peaks and applies filters to the peaks based on the parameters provided.
-         * @detail portions of this function are unimplemented and will throw a compiler error
-         *     if features requested are not available.
+         * @details portions of this function are unimplemented and will throw a compiler error if features requested are not available.
          * @param 1D data vector.
          * @param minimum height thresholds to be filtered. Only minimum heights are implemented.
          * @param threshold unimplemented.
          * @param distance unimplemented.
          * @param prominence unimplemented.
-         * @param width defines the minimum width for eligable points. if a second parameter is applied
-         *     a max width is also applied.
+         * @param width defines the minimum width for eligable points. if a second parameter is applied a max width is also applied.
          * @param wlen defined wlen for calculating prominence.
-         * @param rel_height used in defining the width of peaks based on the location. Defaults to .5
-         *     or 6dB.
+         * @param rel_height used in defining the width of peaks based on the location. Defaults to .5  or 6dB.
          * @param plateau_size unimplemented.
          */
-        template <
-            class E1,
-            class E2 = decltype(xt::xnone()),
-            class E3 = decltype(xt::xnone()),
-            class E4 = decltype(xt::xnone()),
-            class E5 = decltype(xt::xnone()),
-            class E6 = decltype(xt::xnone()),
-            class E7 = decltype(xt::xnone()),
-            class E8 = double,
-            class E9 = decltype(xt::xnone())>
-            inline auto find_peaks(
-                E1&& x,
-                E2&& height = xt::xnone(),
-                E3&& threshold = xt::xnone(),
-                E4&& distance = xt::xnone(),
-                E5&& prominence = xt::xnone(),
-                E6&& width = xt::xnone(),
-                E7&& wlen = xt::xnone(),
-                E8&& rel_height = .5,
-                E9&& plateau_size = xt::xnone())
+        class find_peaks
         {
-            //check that we have only one dimention
+        public:
+            using height_t = 
+            std::variant<
+                float,
+                std::pair<float, float>, 
+                xt::xtensor<float, 1>
+            >;
+
+            using threshold_t =
+            std::variant<
+                float,
+                std::pair<float, float>, 
+                xt::xtensor<float, 1>
+            >;
+
+            using prominence_t =
+            std::variant<
+                float,
+                std::pair<float, float>, 
+                xt::xtensor<float, 1>
+            >;
+
+            using width_t =
+            std::variant<
+                float,
+                std::pair<float, float>, 
+                xt::xtensor<float, 1>
+            >;
+
+            using plateau_t =
+            std::variant<
+                float,
+                std::pair<float, float>, 
+                xt::xtensor<float, 1>
+            >;
+
+            find_peaks();
+            find_peaks& set_height(height_t height)
+            {
+                _height = std::make_optional(height);
+                return *this;
+            }
+            find_peaks& set_threshold(threshold_t threshold)
+            {
+                _threshold = std::make_optional(threshold);
+                return *this;
+            }
+            find_peaks& set_distance(size_t distance)
+            {
+                _distance = std::make_optional(distance);
+                return *this;
+            }
+            find_peaks& set_prominence(prominence_t prominence)
+            {
+                _prominence = std::make_optional(prominence);
+                return *this;
+            }
+            find_peaks& set_width(width_t width)
+            {
+                _width = std::make_optional(width);
+                return *this;
+            }
+            find_peaks& set_wlen(size_t wlen)
+            {
+                _wlen = std::make_optional(wlen);
+                return *this;
+            }
+            find_peaks& set_rel_height(float rel_height)
+            {
+                _rel_height = std::make_optional(rel_height);
+                return *this;
+            }
+            find_peaks& set_plateau_size(plateau_t plateau_size)
+            {
+                _plateau_size = std::make_optional(plateau_size);
+                return *this;
+            }
+            template<class E1>
+            auto operator()(E1&& x)
+            {
+                            //check that we have only one dimention
             if (x.shape().size() != 1)
             {
                 throw std::runtime_error("Array must be 1D");
@@ -463,120 +525,98 @@ namespace xt {
             auto [peaks, left_edges, right_edges] = detail::local_maxima_1d(x);
 
             //check if we want to filter out on height
-            if constexpr (std::is_same<typename std::decay<E2>::type, decltype(xt::xnone())>::value == false)
+            if(_height.has_value())
             {
                 //to match scipy this
                 //we have both parameters
                 using data_type = typename std::decay<E1>::type::value_type;
-                if (height.shape(0) == 1)
-                {
-                    //find the values of the peaks
-                    xt::xarray<data_type> values = xt::view(x, xt::keep(peaks));
+                //find the values of the peaks
+                xt::xarray<data_type> values = xt::view(x, xt::keep(peaks));
 
-                    //determine which values are below threshold
-                    std::transform(values.begin(), values.end(), values.begin(), [&](auto& value) {
-                        if (value < height(0))
-                        {
-                            size_t zero = 0;
-                            return static_cast<typename std::decay<decltype(value)>::type>(zero);
-                        }
-                        return value;
-                        });
+                //determine which values are below threshold
+                // std::transform(values.begin(), values.end(), values.begin(), [&](auto& value) {
+                //     if (value < _height.value())
+                //     {
+                //         size_t zero = 0;
+                //         return static_cast<typename std::decay<decltype(value)>::type>(zero);
+                //     }
+                //     return value;
+                // });
 
-                    //find all the indicies that aren't 0
-                    std::vector<size_t> peaks_to_keep = xt::nonzero(values).at(0);
-                    peaks = xt::view(peaks, xt::keep(peaks_to_keep));
-                }
-                else if (height.shape(0) == 2)
-                {
-                    throw std::runtime_error(
-                        "Number of height parameters not implemented");
-                }
-                else if (height.shape(0) == x.shape(0))
-                {
-                    throw std::runtime_error(
-                        "Number of height parameters not implemented");
-                }
-                else
-                {
-                    throw std::runtime_error(
-                        "Number of height parameters not permitted");
-                }
-
+                //find all the indicies that aren't 0
+                std::vector<size_t> peaks_to_keep = xt::nonzero(values).at(0);
+                peaks = xt::view(peaks, xt::keep(peaks_to_keep));
             }
             //check if we want to filter out on threshold
-            if constexpr (std::is_same<typename std::decay<E3>::type, decltype(xt::xnone())>::value == false)
+            if(_threshold.has_value())
             {
-                //static_assert(false, "Not implemented");
+                
             }
 
             //check if we want to filter out on distance
-            if constexpr (std::is_same<typename std::decay<E4>::type, decltype(xt::xnone())>::value == false)
+            if(_distance.has_value())
             {
-                auto keep = detail::select_by_peak_distance(peaks, xt::eval(xt::view(x, xt::keep(peaks))), distance);
+                auto keep = detail::select_by_peak_distance(peaks, xt::eval(xt::view(x, xt::keep(peaks))), _distance.value());
                 peaks = xt::filter(peaks, keep);
             }
             //check if we want to filter out on prominence
-            if constexpr (std::is_same<typename std::decay<E5>::type, decltype(xt::xnone())>::value == false)
+            if(_prominence.has_value())
             {
-                auto wlen_safe = detail::arg_wlen_as_expected(wlen);
-                auto [prominences, left_bases, right_bases] = detail::peak_prominences(x, peaks, wlen_safe);
-                xt::xarray<bool> keep;
-                if (prominence.shape(0) == 1)
-                {
-                    keep = detail::select_by_property(prominences, prominence(0));
-                }
-                if (prominence.shape(0) == 2)
-                {
-                    keep = detail::select_by_property(prominences, prominence(0), prominence(1));
-                }
+                auto wlen_safe = detail::arg_wlen_as_expected(_wlen.value());
+                auto res = detail::peak_prominences(x, peaks, wlen_safe);
+                auto keep = std::visit(detail::Overload{
+                    [&](float arg)
+                    {
+                        return detail::select_by_property(std::get<0>(res), arg);
+                    },
+                    [&](std::pair<float, float> arg)
+                    {
+                        return detail::select_by_property(std::get<0>(res), arg.first, arg.second);
+                    },
+                    [&](xt::xtensor<float, 1> arg)
+                    {
+                        return detail::select_by_property(std::get<0>(res), arg);
+                    }
+                }, _prominence.value());
                 peaks = xt::filter(peaks, keep);
             }
 
             //check if we want to filter out on width
-            if constexpr (std::is_same<typename std::decay<E6>::type, decltype(xt::xnone())>::value == false)
+            if(_width.has_value())
             {
                 //TODO: should probably capture the case of std vector and convert to array
                 //once we have the prominence we can add it here to avoid recalculating it again
-                auto [widths, width_heights, left_ips, right_ips] = peak_widths(x, peaks, rel_height, wlen);
+                auto [widths, width_heights, left_ips, right_ips] = peak_widths(x, peaks, _rel_height.value(), _wlen.value());
 
                 //get the indices of interest after applying the filter
                 xt::xarray<bool> keep;
 
                 //this can be cleaned up with a wrapper 
-                if (width.shape(0) == 1)
-                {
-                    keep = detail::select_by_property(widths, width(0));
-                }
-                else if (width.shape(0) == 2)
-                {
-                    keep = detail::select_by_property(widths, width(0), width(1));
-                }
-                else
-                {
-                    throw std::runtime_error(
-                        "width length unsupported");
-                }
-                xt::print_options::set_threshold(100000);
+                //keep = detail::select_by_property(widths, _width.value());
+                
                 peaks = xt::filter(peaks, keep);
             }
 
-            //check if we want to filter out on wlen
-            if constexpr (std::is_same<typename std::decay<E7>::type, decltype(xt::xnone())>::value == false)
-            {
-                //static_assert(false, "Not implemented");
-            }
-
             //check if we want to filter out on plateau_size
-            if constexpr (std::is_same<typename std::decay<E9>::type, decltype(xt::xnone())>::value == false)
+            if(_plateau_size.has_value())
             {
-                //static_assert(false, "Not implemented");
+
             }
 
-            //relative high filter
             return peaks;
         }
-    };
-};
+
+        private:
+            std::optional<height_t> _height;
+            std::optional<threshold_t> _threshold;
+            std::optional<size_t> _distance;
+            std::optional<prominence_t> _prominence;
+            std::optional<width_t> _width;
+            std::optional<size_t> _wlen;
+            std::optional<float> _rel_height;
+            std::optional<plateau_t> _plateau_size;
+        };
+    }
+}
 
 #endif
