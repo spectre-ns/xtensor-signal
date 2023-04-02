@@ -39,7 +39,7 @@ namespace xt {
                 // with `j` by order of `priority` while still maintaining the ability to
                 // step to neighbouring peaks with(`j` + 1) or (`j` - 1).
                 auto priority_to_position = xt::argsort(priority);
-                auto index = xt::eval(xt::arange(peaks_size - 1, 0, -1));
+                auto index = xt::eval(xt::arange(peaks_size - 1, std::size_t(0), -1));
                 // Highest priority first->iterate in reverse order(decreasing)
                 for(auto i : index) 
                 {
@@ -550,7 +550,7 @@ namespace xt {
             //check if we want to filter out on threshold
             if(_threshold.has_value())
             {
-                
+
             }
 
             //check if we want to filter out on distance
