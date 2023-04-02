@@ -31,7 +31,7 @@ message(STATUS "xtensor-signal v${${PROJECT_NAME}_VERSION}")
 # Dependencies
 # ============
 
-set(xsimd_REQUIRED_VERSION 8.1.0)
+set(xsimd_REQUIRED_VERSION 10.0.0)
 if(TARGET xsimd)
     set(xsimd_VERSION ${XSIMD_VERSION_MAJOR}.${XSIMD_VERSION_MINOR}.${XSIMD_VERSION_PATCH})
     # Note: This is not SEMVER compatible comparison
@@ -46,7 +46,7 @@ else()
 endif()
 
 
-set(xtensor_REQUIRED_VERSION 0.24.0)
+set(xtensor_REQUIRED_VERSION 0.24.6)
 if(TARGET xtensor)
     set(xtensor_VERSION ${XTENSOR_VERSION_MAJOR}.${XTENSOR_VERSION_MINOR}.${XTENSOR_VERSION_PATCH})
     # Note: This is not SEMVER compatible comparison
