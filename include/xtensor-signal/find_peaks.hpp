@@ -91,13 +91,13 @@ namespace xt {
                 xt::xarray<bool> keep = xt::ones<bool>({ peak_properties.shape(0) });
 
                 //if pmin is available
-                if constexpr (std::is_same<std::decay<E2>::type, decltype(xt::xnone())>::value == false)
+                if constexpr (typename std::is_same<std::decay<E2>::type, decltype(xt::xnone())>::value == false)
                 {
                     keep = keep && (pmin <= peak_properties);
                 }
 
                 //if pmax is available
-                if constexpr (std::is_same<std::decay<E3>::type, decltype(xt::xnone())>::value == false)
+                if constexpr ( typename std::is_same<std::decay<E3>::type, decltype(xt::xnone())>::value == false)
                 {
                     keep = keep && (peak_properties <= pmax);
                 }
@@ -194,7 +194,7 @@ namespace xt {
             auto arg_wlen_as_expected(E1&& value)
             {
                 //if the value is a none type
-                if constexpr (std::is_same<std::decay<E1>::type, decltype(xt::xnone())>::value)
+                if constexpr (typename std::is_same<std::decay<E1>::type, decltype(xt::xnone())>::value)
                 {
                     return -1;
                 }
