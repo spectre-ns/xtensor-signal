@@ -63,26 +63,25 @@ jobs:
     name: ${{ matrix.runs-on }} • x64 ${{ matrix.args }}
     runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-          activate-environment: foo
-      - name: Bash
-        shell: bash -el {0}
+      - uses: actions/checkout@v3
+
+      - name: Install Conda environment from environment.yml
+        uses: mamba-org/provision-with-micromamba@main
+
+      # Linux and macOS
+      - name: Run Python
+        shell: bash -l {0}
         run: |
-          conda info
-          conda list
-      - name: PowerShell
+          python -c "import numpy"
+
+      # Windows
+      # With Powershell:
+      - name: Run Python
         shell: powershell
         run: |
-          conda info
-          conda list
-      - name: PowerShell Core
-        shell: pwsh
-        run: |
-          conda info
-          conda list
-      - name: Cmd.exe
+          python -c "import numpy"
+      # Or with cmd:
+      - name: Run cmd.exe
         shell: cmd /C CALL {0}
         run: >-
-          conda info && conda list
+          micromamba info && micromamba list
