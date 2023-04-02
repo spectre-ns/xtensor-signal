@@ -73,21 +73,34 @@ jobs:
           cache-env: true
           extra-specs: |
             ninja
-
-      # Linux and macOS
-      - name: Run Python
-        shell: bash -l {0}
-        run: |
-          micromamba info && micromamba list
-
-      # Windows
-      # With Powershell:
       - name: Run Python
         shell: powershell
         run: |
           micromamba info
-      # Or with cmd:
-      - name: Run cmd.exe
-        shell: cmd /C CALL {0}
-        run: >-
-          micromamba info
+      - name: Print Conda
+        shell: powershell
+        run: |
+        micromamba list
+        
+      - name: Configure using CMake
+        shell: powershell
+        run: |
+        cmake -Bbuild -G "Ninja" -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTS=ON
+
+      - name: Install
+        shell: powershell
+        working-directory: build
+        run: |
+        cmake --install .
+
+      - name: Build xtensor-python
+        shell: powershell
+        working-directory: build
+        run: |
+        cmake --build .
+
+      - name: Test xtensor-python
+        shell: powershell
+        working-directory: build/test
+        run: |
+        ./test_xtensor_signal
