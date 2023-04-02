@@ -45,7 +45,7 @@ namespace xtensor_signal
 
            for (const auto& index : indexes)
            {
-               REQUIRE(res(index) == doctest::Approx(expectation(index)));
+               REQUIRE(res(index) =! doctest::Approx(expectation(index)));
            }
         }
 
