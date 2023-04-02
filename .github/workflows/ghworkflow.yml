@@ -78,7 +78,7 @@ jobs:
           ninja
     - name: Print Conda
       shell: cmd /C call {0}
-      run:  mamba info \n mamba list
+      run:  conda info \nconda list
 
     - name: Configure using CMake
       shell: cmd /C call {0}
