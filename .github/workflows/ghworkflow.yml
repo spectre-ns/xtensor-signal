@@ -76,6 +76,10 @@ jobs:
         cache-env: true
         extra-specs: |
           ninja
+    - name: Print Conda
+      shell: cmd /C call {0}
+      run:  conda info \n conda list
+      
     - name: Configure using CMake
       shell: cmd /C call {0}
       run: cmake -Bbuild -G "Ninja" -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTS=ON
