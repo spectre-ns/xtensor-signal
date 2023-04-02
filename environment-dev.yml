@@ -7,7 +7,7 @@ dependencies:
   - ninja
   # Host dependencies
   - xsimd
-  - xtensor
+  - xtensor=0.24.6
   - xtensor-blas
   - lapack
   - openblas
