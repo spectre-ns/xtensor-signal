@@ -1,3 +1,6 @@
+#ifndef XTENSOR_SIGNAL_SAVITZKY_GOLAY_HPP
+#define XTENSOR_SIGNAL_SAVITZKY_GOLAY_HPP
+
 // XTensor includes
 #include <xtensor/xnoalias.hpp>
 #include <xtensor/xview.hpp>
@@ -187,3 +190,4 @@ namespace xt
 }
 
 
+#endif
