@@ -76,6 +76,7 @@ TEST_SUITE("find_peaks")
 		res = x(peaks(1));
 		ASSERT_NEAR(res, 10.0, 1e-3);
 	}
+
 	TEST_CASE("ecg_widths_prominance")
 	{
 		xt::xarray<size_t> prominance = { 1 };
@@ -87,6 +88,7 @@ TEST_SUITE("find_peaks")
 		ASSERT_EQ(peaks(0), 49);
 		ASSERT_EQ(peaks(1), 691);
 	}
+	
 	TEST_CASE("select_by_property")
 	{
 		size_t width = 20 ;
