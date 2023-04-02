@@ -478,7 +478,7 @@ namespace xt {
                         if (value < height(0))
                         {
                             size_t zero = 0;
-                            return static_cast<std::decay<decltype(value)>::type>(zero);
+                            return static_cast<typename std::decay<decltype(value)>::type>(zero);
                         }
                         return value;
                         });
