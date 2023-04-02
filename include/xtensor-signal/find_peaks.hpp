@@ -463,7 +463,7 @@ namespace xt {
             auto [peaks, left_edges, right_edges] = detail::local_maxima_1d(x);
 
             //check if we want to filter out on height
-            if constexpr (std::is_same<std::decay<E2>::type, decltype(xt::xnone())>::value == false)
+            if constexpr (typename std::is_same<std::decay<E2>::type, decltype(xt::xnone())>::value == false)
             {
                 //to match scipy this
                 //we have both parameters
@@ -505,19 +505,19 @@ namespace xt {
 
             }
             //check if we want to filter out on threshold
-            if constexpr (std::is_same<std::decay<E3>::type, decltype(xt::xnone())>::value == false)
+            if constexpr (typename std::is_same<std::decay<E3>::type, decltype(xt::xnone())>::value == false)
             {
                 static_assert(false, "Not implemented");
             }
 
             //check if we want to filter out on distance
-            if constexpr (std::is_same<std::decay<E4>::type, decltype(xt::xnone())>::value == false)
+            if constexpr (typename std::is_same<std::decay<E4>::type, decltype(xt::xnone())>::value == false)
             {
                 auto keep = detail::select_by_peak_distance(peaks, xt::eval(xt::view(x, xt::keep(peaks))), distance);
                 peaks = xt::filter(peaks, keep);
             }
             //check if we want to filter out on prominence
-            if constexpr (std::is_same<std::decay<E5>::type, decltype(xt::xnone())>::value == false)
+            if constexpr (typename std::is_same<std::decay<E5>::type, decltype(xt::xnone())>::value == false)
             {
                 auto wlen_safe = detail::arg_wlen_as_expected(wlen);
                 auto [prominences, left_bases, right_bases] = detail::peak_prominences(x, peaks, wlen_safe);
@@ -534,7 +534,7 @@ namespace xt {
             }
 
             //check if we want to filter out on width
-            if constexpr (std::is_same<std::decay<E6>::type, decltype(xt::xnone())>::value == false)
+            if constexpr (typename std::is_same<std::decay<E6>::type, decltype(xt::xnone())>::value == false)
             {
                 //TODO: should probably capture the case of std vector and convert to array
                 //once we have the prominence we can add it here to avoid recalculating it again
@@ -562,13 +562,13 @@ namespace xt {
             }
 
             //check if we want to filter out on wlen
-            if constexpr (std::is_same<std::decay<E7>::type, decltype(xt::xnone())>::value == false)
+            if constexpr (typename std::is_same<std::decay<E7>::type, decltype(xt::xnone())>::value == false)
             {
                 static_assert(false, "Not implemented");
             }
 
             //check if we want to filter out on plateau_size
-            if constexpr (std::is_same<std::decay<E9>::type, decltype(xt::xnone())>::value == false)
+            if constexpr (typename std::is_same<std::decay<E9>::type, decltype(xt::xnone())>::value == false)
             {
                 static_assert(false, "Not implemented");
             }
