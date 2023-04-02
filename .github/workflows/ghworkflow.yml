@@ -85,9 +85,9 @@ jobs:
       - name: Run Python
         shell: powershell
         run: |
-          micromamba info && micromamba list
+          micromamba info | micromamba list
       # Or with cmd:
       - name: Run cmd.exe
         shell: cmd /C CALL {0}
         run: >-
-          micromamba info && micromamba list
+          micromamba info | micromamba list
