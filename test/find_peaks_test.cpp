@@ -5,7 +5,7 @@
 #include "xtensor/xio.hpp"
 #include "xtensor-io/xnpz.hpp"
 
-#include "../xtensor-signal/find_peaks.hpp"
+#include "xtensor-signal/find_peaks.hpp"
 
 TEST_SUITE("find_peaks")
 {
