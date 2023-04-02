@@ -79,6 +79,8 @@ jobs:
     - name: Print Conda
       shell: cmd /C call {0}
       run: conda info
+    - name: Print Conda 2
+      shell: cmd /C call {0}
       run: conda list
 
     - name: Configure using CMake
