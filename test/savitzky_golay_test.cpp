@@ -39,7 +39,7 @@ namespace xtensor_signal
                 2.245366080006883092e-01
             };
 
-        //    auto res = xt::signal::savgol_filter(data, 7, 5);
+        auto res = xt::signal::savgol_filter(data, 7, 5);
            
         //    auto indexes = xt::linspace(std::size_t(0), res.shape(0) - 1, res.shape(0));
 
