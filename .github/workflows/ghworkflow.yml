@@ -101,6 +101,7 @@ jobs:
 
       - name: Test xtensor-python
         shell: powershell
-        working-directory: test
+        working-directory: build
         run: |
+          ls
           ./test_xtensor_signal
