@@ -9,5 +9,8 @@
 
 TEST_SUITE("find_peaks")
 {
-
+    TEST_CASE("Find Gaussian Peaks")
+    {
+        
+    }
 }

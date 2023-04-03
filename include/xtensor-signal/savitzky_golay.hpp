@@ -166,17 +166,18 @@ namespace xt
 
         xt::xarray<double> savgol_filter(xt::xarray<double> x, size_t window_length, size_t polyorder, std::ptrdiff_t axis = -1)
         {
-            xt::xarray<double> out = xt::zeros<double>(x.shape());
+            xt::xarray<double> out = xt::empty_like(x);
             auto saxis = xt::normalize_axis(x.dimension(), axis);
             auto begin = xt::axis_slice_begin(x, saxis);
             auto end = xt::axis_slice_end(x, saxis);
             auto iter_out = xt::axis_slice_begin(out, saxis);
 
             SavGolTransform filter(x.shape(saxis), window_length, polyorder);
+            std::vector<xt::xarray<double>> res;
 
             for (auto iter = begin; iter != end; iter++)
             {
-                (*iter_out++) = filter.Transform(*iter);
+                *iter_out = filter.Transform(*iter);
             }
 
             return out;
