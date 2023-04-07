@@ -128,4 +128,17 @@ TEST_SUITE("find_peaks")
 			REQUIRE_EQ(peaks(i), expectation(i));
 		}
 	}
+    TEST_CASE("ecg_plateau")
+	{
+		size_t plateau_size = 3;
+		xt::xarray<size_t> expectation = { 1236, 1417, 1971 };
+		auto x = xt::load_npz<double>("test_data/ecg.npz", "data");
+		x = xt::view(x, xt::range(2000, 4000));
+		xt::signal::find_peaks fp;
+        auto peaks = fp.set_plateau_size(plateau_size)(x);
+		for (size_t i = 0; i < expectation.shape(0); i++)
+		{
+			REQUIRE_EQ(peaks(i), expectation(i));
+		}
+	}
 }
