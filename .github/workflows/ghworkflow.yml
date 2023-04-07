@@ -43,12 +43,12 @@ jobs:
       working-directory: build
       run: cmake --install .
 
-    - name: Build xtensor-python
+    - name: Build xtensor-signal
       shell: bash -l {0}
       working-directory: build
       run: cmake --build .
 
-    - name: Test xtensor-python
+    - name: Test xtensor-signal
       shell: bash -l {0}
       working-directory: build/test
       run: ./test_xtensor_signal
@@ -87,13 +87,13 @@ jobs:
         run: |
           cmake -Bbuild -G "Ninja" -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTS=ON
 
-      - name: Build xtensor-python
+      - name: Build xtensor-signal
         shell: powershell
         working-directory: build
         run: |
           cmake --build .
 
-      - name: Test xtensor-python
+      - name: Test xtensor-signal
         shell: powershell
         working-directory: build/test
         run: ./test_xtensor_signal
