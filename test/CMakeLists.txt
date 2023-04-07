@@ -44,6 +44,8 @@ set(XTENSOR_SIGNAL_TESTS
     find_peaks_test.cpp
 )
 
+file(COPY "test_data" DESTINATION "${CMAKE_BINARY_DIR}/test")
+
 add_executable(test_xtensor_signal ${XTENSOR_SIGNAL_TESTS} ${XTENSOR_SIGNAL_HEADERS})
 target_link_libraries(test_xtensor_signal PRIVATE ZLIB::ZLIB xtensor-signal doctest::doctest ${CMAKE_THREAD_LIBS_INIT})
 

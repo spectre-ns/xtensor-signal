@@ -8,7 +8,9 @@
 
 #include <xtensor/xmath.hpp>
 #include <xtensor/xsort.hpp>
-#include <xtensor.hpp>
+#include <xtensor/xbuilder.hpp>
+#include <xtensor/xtensor.hpp>
+
 
 
 namespace xt {
@@ -19,6 +21,36 @@ namespace xt {
                 using Ts::operator() ...;
             };
             template<class... Ts> Overload(Ts...) -> Overload<Ts...>;
+
+            template<
+                class E1,
+                class E2,
+                class E3,
+                class E4 = decltype(xt::xnone())>
+            auto select_by_peak_threshold(E1&& x, E2&& peaks, E3&& tmin, E4&& tmax = xt::xnone())
+            {
+                //Stack thresholds on both sides to make min / max operations easier :
+                //tmin is compared with the smaller, and tmax with the greater thresold to
+                //each peak's side
+                auto peak_left = xt::eval(peaks - 1);
+                auto peak_right = xt::eval(peaks + 1);
+                auto left = xt::eval(xt::view(x, xt::keep(peaks)) - xt::view(x, xt::keep(peak_left)));
+                auto right = xt::eval(xt::view(x, xt::keep(peaks)) - xt::view(x, xt::keep(peak_right)));
+                auto stacked_thresholds = xt::vstack(std::make_tuple(left, right));
+                xt::xarray<bool> keep = xt::ones<bool>({ peaks.size() });
+                if constexpr (std::is_same<typename std::decay<E3>::type, decltype(xt::xnone())>::value == false)
+                {
+                    auto min_thresholds = xt::amin(stacked_thresholds, { 0 });
+                    keep = keep && (tmin <= min_thresholds);
+                }
+                if constexpr (std::is_same<typename std::decay<E4>::type, decltype(xt::xnone())>::value == false)
+                {
+                    auto max_thresholds = xt::amax(stacked_thresholds, { 0 });
+                    keep = keep && (max_thresholds <= tmax);
+                }
+                return std::make_tuple(keep, stacked_thresholds(0), stacked_thresholds(1));
+            }
+
             template<
                 class E1,
                 class E2,
@@ -441,38 +473,43 @@ namespace xt {
             std::variant<
                 float,
                 std::pair<float, float>, 
-                xt::xtensor<float, 1>
+                xt::xtensor<float, 1>,
+                std::pair<xt::xtensor<float,1>, xt::xtensor<float,1>>
             >;
 
             using threshold_t =
             std::variant<
                 float,
                 std::pair<float, float>, 
-                xt::xtensor<float, 1>
+                xt::xtensor<float, 1>,
+                std::pair<xt::xtensor<float,1>, xt::xtensor<float,1>>
             >;
 
             using prominence_t =
             std::variant<
                 float,
                 std::pair<float, float>, 
-                xt::xtensor<float, 1>
+                xt::xtensor<float, 1>,
+                std::pair<xt::xtensor<float,1>, xt::xtensor<float,1>>
             >;
 
             using width_t =
             std::variant<
                 float,
                 std::pair<float, float>, 
-                xt::xtensor<float, 1>
+                xt::xtensor<float, 1>,
+                std::pair<xt::xtensor<float,1>, xt::xtensor<float,1>>
             >;
 
             using plateau_t =
             std::variant<
                 float,
                 std::pair<float, float>, 
-                xt::xtensor<float, 1>
+                xt::xtensor<float, 1>,
+                std::pair<xt::xtensor<float,1>, xt::xtensor<float,1>>
             >;
 
-            find_peaks();
+            find_peaks() = default;
             find_peaks& set_height(height_t height)
             {
                 _height = std::make_optional(height);
@@ -513,6 +550,7 @@ namespace xt {
                 _plateau_size = std::make_optional(plateau_size);
                 return *this;
             }
+
             template<class E1>
             auto operator()(E1&& x)
             {
@@ -522,86 +560,122 @@ namespace xt {
                 throw std::runtime_error("Array must be 1D");
             }
 
-            auto [peaks, left_edges, right_edges] = detail::local_maxima_1d(x);
+            auto all_peaks = detail::local_maxima_1d(x);
+            auto peaks = std::get<0>(all_peaks);
 
             //check if we want to filter out on height
             if(_height.has_value())
             {
-                //to match scipy this
-                //we have both parameters
-                using data_type = typename std::decay<E1>::type::value_type;
-                //find the values of the peaks
-                xt::xarray<data_type> values = xt::view(x, xt::keep(peaks));
-
-                //determine which values are below threshold
-                // std::transform(values.begin(), values.end(), values.begin(), [&](auto& value) {
-                //     if (value < _height.value())
-                //     {
-                //         size_t zero = 0;
-                //         return static_cast<typename std::decay<decltype(value)>::type>(zero);
-                //     }
-                //     return value;
-                // });
-
-                //find all the indicies that aren't 0
-                std::vector<size_t> peaks_to_keep = xt::nonzero(values).at(0);
-                peaks = xt::view(peaks, xt::keep(peaks_to_keep));
+                auto peaks_values = xt::view(x, xt::keep(std::get<0>(all_peaks)));
+                auto keep = std::visit(detail::Overload{
+                        [&](float arg)
+                        {
+                            return detail::select_by_property(peaks_values, arg);
+                        },
+                        [&](std::pair<float, float> arg)
+                        {
+                            return detail::select_by_property(peaks_values, arg.first, arg.second);
+                        },
+                        [&](xt::xtensor<float, 1> arg)
+                        {
+                            return detail::select_by_property(peaks_values, arg);
+                        },
+                        [&](std::pair<xt::xtensor<float, 1>, xt::xtensor<float, 1>> arg)
+                        {
+                            return detail::select_by_property(peaks_values, arg.first, arg.second);
+                        }
+                    }, _height.value());
+                peaks = xt::filter(peaks, keep);
             }
             //check if we want to filter out on threshold
             if(_threshold.has_value())
             {
+                std::visit(detail::Overload{
+                        [&](float arg)
+                        {
+                            auto [keep, left_thresholds, right_thresholds] = detail::select_by_peak_threshold(
+                                    x, std::get<0>(all_peaks), arg);
+                            // return keep;
+                        },
+                        [&](std::pair<float, float> arg)
+                        {
+                            // auto [keep, left_thresholds, right_thresholds] = detail::select_by_peak_threshold(
+                            //             x, std::get<0>(all_peaks), arg.first, arg.second);
+                            // return keep;
+                        },
+                        [&](xt::xtensor<float, 1> arg)
+                        {
+                            // auto [keep, left_thresholds, right_thresholds] = detail::select_by_peak_threshold(
+                            //         x, std::get<0>(all_peaks), arg);
+                            // return keep;
+                        },
+                        [&](std::pair<xt::xtensor<float, 1>, xt::xtensor<float, 1>> arg)
+                        {
+                            // auto [keep, left_thresholds, right_thresholds] = detail::select_by_peak_threshold(
+                            //             x, std::get<0>(all_peaks), arg.first, arg.second);
+                            // return keep;
+                        }
+                    }, _threshold.value());
 
+                // peaks = xt::filter(peaks, keep);
             }
 
-            //check if we want to filter out on distance
-            if(_distance.has_value())
-            {
-                auto keep = detail::select_by_peak_distance(peaks, xt::eval(xt::view(x, xt::keep(peaks))), _distance.value());
-                peaks = xt::filter(peaks, keep);
-            }
-            //check if we want to filter out on prominence
-            if(_prominence.has_value())
-            {
-                auto wlen_safe = detail::arg_wlen_as_expected(_wlen.value());
-                auto res = detail::peak_prominences(x, peaks, wlen_safe);
-                auto keep = std::visit(detail::Overload{
-                    [&](float arg)
-                    {
-                        return detail::select_by_property(std::get<0>(res), arg);
-                    },
-                    [&](std::pair<float, float> arg)
-                    {
-                        return detail::select_by_property(std::get<0>(res), arg.first, arg.second);
-                    },
-                    [&](xt::xtensor<float, 1> arg)
-                    {
-                        return detail::select_by_property(std::get<0>(res), arg);
-                    }
-                }, _prominence.value());
-                peaks = xt::filter(peaks, keep);
-            }
+            // //check if we want to filter out on distance
+            // if(_distance.has_value())
+            // {
+            //     auto keep = detail::select_by_peak_distance(peaks, xt::eval(xt::view(x, xt::keep(peaks))), _distance.value());
+            //     peaks = xt::filter(peaks, keep);
+            // }
+            // //check if we want to filter out on prominence
+            // if(_prominence.has_value())
+            // {
+            //     auto wlen_safe = detail::arg_wlen_as_expected(_wlen.value());
+            //     auto res = detail::peak_prominences(x, peaks, wlen_safe);
+            //     auto keep = std::visit(detail::Overload{
+            //         [&](float arg)
+            //         {
+            //             return detail::select_by_property(std::get<0>(res), arg);
+            //         },
+            //         [&](std::pair<float, float> arg)
+            //         {
+            //             return detail::select_by_property(std::get<0>(res), arg.first, arg.second);
+            //         },
+            //         [&](xt::xtensor<float, 1> arg)
+            //         {
+            //             return detail::select_by_property(std::get<0>(res), arg);
+            //         }
+            //     }, _prominence.value());
+            //     peaks = xt::filter(peaks, keep);
+            // }
 
-            //check if we want to filter out on width
-            if(_width.has_value())
-            {
-                //TODO: should probably capture the case of std vector and convert to array
-                //once we have the prominence we can add it here to avoid recalculating it again
-                auto [widths, width_heights, left_ips, right_ips] = peak_widths(x, peaks, _rel_height.value(), _wlen.value());
+            // //check if we want to filter out on width
+            // if(_width.has_value())
+            // {
+            //     //TODO: should probably capture the case of std vector and convert to array
+            //     //once we have the prominence we can add it here to avoid recalculating it again
+            //     auto [widths, width_heights, left_ips, right_ips] = peak_widths(x, peaks, _rel_height.value(), _wlen.value());
+            //     auto keep = std::visit(detail::Overload{
+            //         [&](float arg)
+            //         {
+            //             return detail::select_by_property(widths, arg);
+            //         },
+            //         [&](std::pair<float, float> arg)
+            //         {
+            //             return detail::select_by_property(widths, arg.first, arg.second);
+            //         },
+            //         [&](xt::xtensor<float, 1> arg)
+            //         {
+            //             return detail::select_by_property(widths, arg);
+            //         }
+            //     }, _width.value());
+            //     peaks = xt::filter(peaks, keep);
+            // }
 
-                //get the indices of interest after applying the filter
-                xt::xarray<bool> keep;
+            // //check if we want to filter out on plateau_size
+            // if(_plateau_size.has_value())
+            // {
 
-                //this can be cleaned up with a wrapper 
-                //keep = detail::select_by_property(widths, _width.value());
-                
-                peaks = xt::filter(peaks, keep);
-            }
-
-            //check if we want to filter out on plateau_size
-            if(_plateau_size.has_value())
-            {
-
-            }
+            // }
 
             return peaks;
         }
