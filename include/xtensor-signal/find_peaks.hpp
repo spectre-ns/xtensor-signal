@@ -32,11 +32,12 @@ namespace xt {
                 //Stack thresholds on both sides to make min / max operations easier :
                 //tmin is compared with the smaller, and tmax with the greater thresold to
                 //each peak's side
+                using value_type = typename std::decay<E1>::type::value_type;
                 auto peak_left = xt::eval(peaks - 1);
                 auto peak_right = xt::eval(peaks + 1);
-                auto left = xt::eval(xt::view(x, xt::keep(peaks)) - xt::view(x, xt::keep(peak_left)));
-                auto right = xt::eval(xt::view(x, xt::keep(peaks)) - xt::view(x, xt::keep(peak_right)));
-                auto stacked_thresholds = xt::vstack(std::make_tuple(left, right));
+                xt::xarray<value_type> left = xt::view(x, xt::keep(peaks)) - xt::view(x, xt::keep(peak_left));
+                xt::xarray<value_type> right = xt::view(x, xt::keep(peaks)) - xt::view(x, xt::keep(peak_right));
+                auto stacked_thresholds = xt::vstack(xt::xtuple(left, right));
                 xt::xarray<bool> keep = xt::ones<bool>({ peaks.size() });
                 if constexpr (std::is_same<typename std::decay<E3>::type, decltype(xt::xnone())>::value == false)
                 {
@@ -60,7 +61,7 @@ namespace xt {
                 E2&& priority,
                 E3&& distance)
             {
-                size_t j, k;
+                int64_t j, k;
                 size_t peaks_size = peaks.shape(0);
                 // Round up because actual peak distance can only be natural number
                 auto distance_ = std::ceil(distance);
@@ -71,14 +72,14 @@ namespace xt {
                 // with `j` by order of `priority` while still maintaining the ability to
                 // step to neighbouring peaks with(`j` + 1) or (`j` - 1).
                 auto priority_to_position = xt::argsort(priority);
-                auto index = xt::eval(xt::arange(peaks_size - 1, std::size_t(0), -1));
+                auto index = xt::eval(xt::arange<int>(peaks_size - 1, -1, -1));
                 // Highest priority first->iterate in reverse order(decreasing)
-                for(auto i : index) 
+                for (auto i : index)
                 {
                     // "Translate" `i` to `j` which points to current peak whose
                     // neighbours are to be evaluated
-                    j = priority_to_position[i];
-                    if(keep[j] == 0)
+                    j = priority_to_position(i);
+                    if (keep(j) == 0)
                     {
                         // Skip evaluation for peak already marked as "don't keep"
                         continue;
@@ -86,17 +87,17 @@ namespace xt {
 
                     k = j - 1;
                     // Flag "earlier" peaks for removal until minimal distance is exceeded
-                    while(0 <= k && peaks[j] - peaks[k] < distance_)
+                    while (0 <= k && peaks(j) - peaks(k) < distance_)
                     {
-                        keep[k] = 0;
+                        keep(k) = 0;
                         k -= 1;
                     }
 
                     k = j + 1;
                     // Flag "later" peaks for removal until minimal distance is exceeded
-                    while(k < peaks_size && peaks[k] - peaks[j] < distance_)
+                    while (k < peaks_size && peaks(k) - peaks(j) < distance_)
                     {
-                        keep[k] = 0;
+                        keep(k) = 0;
                         k += 1;
                     }
                 }
@@ -230,11 +231,10 @@ namespace xt {
              * @returns The original `value` rounded up to an integer or -1 if `value` was None.
              * @note Derived from https://github.com/scipy/scipy/blob/main/scipy/signal/_peak_finding.py
              */
-            template<class E1>
-            int arg_wlen_as_expected(E1&& value)
+            int arg_wlen_as_expected(std::optional<size_t> value)
             {
                 //if the value is a none type
-                if constexpr (std::is_same<typename std::decay<E1>::type, decltype(xt::xnone())>::value)
+                if(!value.has_value())
                 {
                     return -1;
                 }
@@ -242,9 +242,9 @@ namespace xt {
                 {
                     //otherwise we have a number
                     //could probably add a check for arithmatic type here
-                    if (1 < value)
+                    if (1 < value.value())
                     {
-                        return std::ceil(value);
+                        return std::ceil(value.value());
                     }
                 }
 
@@ -421,13 +421,12 @@ namespace xt {
         template<
             typename E1,
             typename E2,
-            typename E3 = double,
-            typename E4 = decltype(xt::xnone())>
+            typename E3 = double>
             auto peak_widths(
                 E1&& x,
                 E2&& peaks,
-                E3&& rel_height = .5,
-                E4&& wlen = xt::xnone())
+                E3&& rel_height,
+                std::optional<size_t> wlen)
         {
             //check that we have only one dimention
             if (x.shape().size() != 1)
@@ -509,7 +508,10 @@ namespace xt {
                 std::pair<xt::xtensor<float,1>, xt::xtensor<float,1>>
             >;
 
-            find_peaks() = default;
+            find_peaks() : _rel_height(.5)
+            {
+    
+            }
             find_peaks& set_height(height_t height)
             {
                 _height = std::make_optional(height);
@@ -542,7 +544,7 @@ namespace xt {
             }
             find_peaks& set_rel_height(float rel_height)
             {
-                _rel_height = std::make_optional(rel_height);
+                _rel_height = rel_height;
                 return *this;
             }
             find_peaks& set_plateau_size(plateau_t plateau_size)
@@ -590,86 +592,94 @@ namespace xt {
             //check if we want to filter out on threshold
             if(_threshold.has_value())
             {
-                std::visit(detail::Overload{
+                auto keep = std::visit(detail::Overload{
                         [&](float arg)
                         {
                             auto [keep, left_thresholds, right_thresholds] = detail::select_by_peak_threshold(
                                     x, std::get<0>(all_peaks), arg);
-                            // return keep;
+                            return keep;
                         },
                         [&](std::pair<float, float> arg)
                         {
-                            // auto [keep, left_thresholds, right_thresholds] = detail::select_by_peak_threshold(
-                            //             x, std::get<0>(all_peaks), arg.first, arg.second);
-                            // return keep;
+                            auto [keep, left_thresholds, right_thresholds] = detail::select_by_peak_threshold(
+                                        x, std::get<0>(all_peaks), arg.first, arg.second);
+                            return keep;
                         },
                         [&](xt::xtensor<float, 1> arg)
                         {
-                            // auto [keep, left_thresholds, right_thresholds] = detail::select_by_peak_threshold(
-                            //         x, std::get<0>(all_peaks), arg);
-                            // return keep;
+                            auto [keep, left_thresholds, right_thresholds] = detail::select_by_peak_threshold(
+                                    x, std::get<0>(all_peaks), arg);
+                            return keep;
                         },
                         [&](std::pair<xt::xtensor<float, 1>, xt::xtensor<float, 1>> arg)
                         {
-                            // auto [keep, left_thresholds, right_thresholds] = detail::select_by_peak_threshold(
-                            //             x, std::get<0>(all_peaks), arg.first, arg.second);
-                            // return keep;
+                            auto [keep, left_thresholds, right_thresholds] = detail::select_by_peak_threshold(
+                                        x, std::get<0>(all_peaks), arg.first, arg.second);
+                            return keep;
                         }
                     }, _threshold.value());
 
-                // peaks = xt::filter(peaks, keep);
+                peaks = xt::filter(peaks, keep);
             }
 
-            // //check if we want to filter out on distance
-            // if(_distance.has_value())
-            // {
-            //     auto keep = detail::select_by_peak_distance(peaks, xt::eval(xt::view(x, xt::keep(peaks))), _distance.value());
-            //     peaks = xt::filter(peaks, keep);
-            // }
-            // //check if we want to filter out on prominence
-            // if(_prominence.has_value())
-            // {
-            //     auto wlen_safe = detail::arg_wlen_as_expected(_wlen.value());
-            //     auto res = detail::peak_prominences(x, peaks, wlen_safe);
-            //     auto keep = std::visit(detail::Overload{
-            //         [&](float arg)
-            //         {
-            //             return detail::select_by_property(std::get<0>(res), arg);
-            //         },
-            //         [&](std::pair<float, float> arg)
-            //         {
-            //             return detail::select_by_property(std::get<0>(res), arg.first, arg.second);
-            //         },
-            //         [&](xt::xtensor<float, 1> arg)
-            //         {
-            //             return detail::select_by_property(std::get<0>(res), arg);
-            //         }
-            //     }, _prominence.value());
-            //     peaks = xt::filter(peaks, keep);
-            // }
+            //check if we want to filter out on distance
+            if(_distance.has_value())
+            {
+                auto keep = detail::select_by_peak_distance(peaks, xt::eval(xt::view(x, xt::keep(peaks))), _distance.value());
+                peaks = xt::filter(peaks, keep);
+            }
+            //check if we want to filter out on prominence
+            if(_prominence.has_value())
+            {
+                auto wlen_safe = detail::arg_wlen_as_expected(_wlen);
+                auto res = detail::peak_prominences(x, peaks, wlen_safe);
+                auto keep = std::visit(detail::Overload{
+                    [&](float arg)
+                    {
+                        return detail::select_by_property(std::get<0>(res), arg);
+                    },
+                    [&](std::pair<float, float> arg)
+                    {
+                        return detail::select_by_property(std::get<0>(res) , arg.first, arg.second);
+                    },
+                    [&](xt::xtensor<float, 1> arg)
+                    {
+                        return detail::select_by_property(std::get<0>(res) , arg);
+                    },
+                    [&](std::pair<xt::xtensor<float, 1>, xt::xtensor<float, 1>> arg)
+                    {
+                       return detail::select_by_property(std::get<0>(res), arg.first, arg.second);
+                    }
+                }, _prominence.value());
+                peaks = xt::filter(peaks, keep);
+            }
 
-            // //check if we want to filter out on width
-            // if(_width.has_value())
-            // {
-            //     //TODO: should probably capture the case of std vector and convert to array
-            //     //once we have the prominence we can add it here to avoid recalculating it again
-            //     auto [widths, width_heights, left_ips, right_ips] = peak_widths(x, peaks, _rel_height.value(), _wlen.value());
-            //     auto keep = std::visit(detail::Overload{
-            //         [&](float arg)
-            //         {
-            //             return detail::select_by_property(widths, arg);
-            //         },
-            //         [&](std::pair<float, float> arg)
-            //         {
-            //             return detail::select_by_property(widths, arg.first, arg.second);
-            //         },
-            //         [&](xt::xtensor<float, 1> arg)
-            //         {
-            //             return detail::select_by_property(widths, arg);
-            //         }
-            //     }, _width.value());
-            //     peaks = xt::filter(peaks, keep);
-            // }
+            //check if we want to filter out on width
+            if(_width.has_value())
+            {
+                //TODO: should probably capture the case of std vector and convert to array
+                //once we have the prominence we can add it here to avoid recalculating it again
+                auto widths = peak_widths(x, peaks, _rel_height, _wlen);
+                auto keep = std::visit(detail::Overload{
+                    [&](float arg)
+                    {
+                        return detail::select_by_property(std::get<0>(widths), arg);
+                    },
+                    [&](std::pair<float, float> arg)
+                    {
+                        return detail::select_by_property(std::get<0>(widths), arg.first, arg.second);
+                    },
+                    [&](xt::xtensor<float, 1> arg)
+                    {
+                        return detail::select_by_property(std::get<0>(widths), arg);
+                    },
+                    [&](std::pair<xt::xtensor<float, 1>, xt::xtensor<float, 1>> arg)
+                    {
+                       return detail::select_by_property(std::get<0>(widths), arg.first, arg.second);
+                    }
+                }, _width.value());
+                peaks = xt::filter(peaks, keep);
+            }
 
             // //check if we want to filter out on plateau_size
             // if(_plateau_size.has_value())
@@ -687,7 +697,7 @@ namespace xt {
             std::optional<prominence_t> _prominence;
             std::optional<width_t> _width;
             std::optional<size_t> _wlen;
-            std::optional<float> _rel_height;
+            float _rel_height;
             std::optional<plateau_t> _plateau_size;
         };
     }
