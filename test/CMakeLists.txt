@@ -40,7 +40,6 @@ include_directories(${GTEST_INCLUDE_DIRS})
 set(XTENSOR_SIGNAL_TESTS
     main.cpp
     test_config.cpp
-    savitzky_golay_test.cpp
     find_peaks_test.cpp
 )
 

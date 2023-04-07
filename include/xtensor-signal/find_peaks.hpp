@@ -565,6 +565,31 @@ namespace xt {
             auto all_peaks = detail::local_maxima_1d(x);
             auto peaks = std::get<0>(all_peaks);
 
+                        //check if we want to filter out on plateau_size
+            if(_plateau_size.has_value())
+            {
+                auto plateau_sizes = std::get<1>(all_peaks) -std::get<2>(all_peaks) + 1;
+                auto keep = std::visit(detail::Overload{
+                    [&](float arg)
+                    {
+                        return detail::select_by_property(plateau_sizes, arg);
+                    },
+                    [&](std::pair<float, float> arg)
+                    {
+                        return detail::select_by_property(plateau_sizes, arg.first, arg.second);
+                    },
+                    [&](xt::xtensor<float, 1> arg)
+                    {
+                        return detail::select_by_property(plateau_sizes, arg);
+                    },
+                    [&](std::pair<xt::xtensor<float, 1>, xt::xtensor<float, 1>> arg)
+                    {
+                       return detail::select_by_property(plateau_sizes, arg.first, arg.second);
+                    }
+                }, _plateau_size.value());
+                peaks = xt::filter(peaks, keep);
+            }
+
             //check if we want to filter out on height
             if(_height.has_value())
             {
@@ -680,32 +705,7 @@ namespace xt {
                 }, _width.value());
                 peaks = xt::filter(peaks, keep);
             }
-
-            //check if we want to filter out on plateau_size
-            if(_plateau_size.has_value())
-            {
-                auto plateau_sizes = std::get<1>(all_peaks) -std::get<2>(all_peaks) + 1;
-                auto keep = std::visit(detail::Overload{
-                    [&](float arg)
-                    {
-                        return detail::select_by_property(plateau_sizes, arg);
-                    },
-                    [&](std::pair<float, float> arg)
-                    {
-                        return detail::select_by_property(plateau_sizes, arg.first, arg.second);
-                    },
-                    [&](xt::xtensor<float, 1> arg)
-                    {
-                        return detail::select_by_property(plateau_sizes, arg);
-                    },
-                    [&](std::pair<xt::xtensor<float, 1>, xt::xtensor<float, 1>> arg)
-                    {
-                       return detail::select_by_property(plateau_sizes, arg.first, arg.second);
-                    }
-                }, _plateau_size.value());
-                peaks = xt::filter(peaks, keep);
-            }
-
+            
             return peaks;
         }
 

@@ -141,4 +141,17 @@ TEST_SUITE("find_peaks")
 			REQUIRE_EQ(peaks(i), expectation(i));
 		}
 	}
+    TEST_CASE("ecg_widths_min_max")
+	{
+		std::pair<float, float> width = {5,6};
+		xt::xarray<double> expectation = {14, 46,  808, 1468, 1759 };
+		auto x = xt::load_npz<double>("test_data/ecg.npz", "data");
+		x = xt::view(x, xt::range(2000, 4000));
+        xt::signal::find_peaks fp;
+		auto peaks = fp.set_width(width)(x);
+		for (size_t i = 0; i < expectation.shape(0); i++)
+		{
+			REQUIRE_EQ(peaks(i), expectation(i));
+		}
+	}
 }
