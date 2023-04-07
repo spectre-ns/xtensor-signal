@@ -44,6 +44,10 @@ set(XTENSOR_SIGNAL_TESTS
     find_peaks_test.cpp
 )
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${_cxx_std_flag} /MP /bigobj")
+endif()
+
 file(COPY "test_data" DESTINATION "${CMAKE_BINARY_DIR}/test")
 
 add_executable(test_xtensor_signal ${XTENSOR_SIGNAL_TESTS} ${XTENSOR_SIGNAL_HEADERS})
