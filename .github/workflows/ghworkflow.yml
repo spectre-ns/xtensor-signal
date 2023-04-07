@@ -73,14 +73,6 @@ jobs:
           cache-env: true
           extra-specs: |
             ninja
-      - name: Run Python
-        shell: powershell
-        run: |
-          micromamba info
-      - name: Print Conda
-        shell: powershell
-        run: |
-          micromamba list
         
       - name: Configure using CMake
         shell: powershell
