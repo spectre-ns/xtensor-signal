@@ -30,7 +30,7 @@ jobs:
           ninja
     - name: Configure using CMake
       shell: bash -l {0}
-      run: cmake -Bbuild -G "Ninja" -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTS=ON -DBUILD_BENCHMARKS
+      run: cmake -Bbuild -G "Ninja" -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTS=ON -DBUILD_BENCHMARKS=ON
 
     - name: Install
       shell: bash -l {0}
@@ -71,7 +71,7 @@ jobs:
       - name: Configure using CMake
         shell: powershell
         run: |
-          cmake -Bbuild -G "Ninja" -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTS=ON -DBUILD_BENCHMARKS
+          cmake -Bbuild -G "Ninja" -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTS=ON -DBUILD_BENCHMARKS=ON
 
       - name: Build xtensor-signal
         shell: powershell
