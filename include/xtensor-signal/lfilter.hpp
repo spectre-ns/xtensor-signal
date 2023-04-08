@@ -9,6 +9,7 @@ namespace xt {
         namespace detail{
             /**
              * @brief compute direct form 2 transposed topology
+             * @todo benchmark inner implementation against the scipy equivalent.
             */
             template<typename E1, typename E2, typename E3, typename E4>
             auto df2_transposed(E1&& b, E2&& a, E3&& x, E4 zi)
@@ -45,24 +46,40 @@ namespace xt {
                 return out;
             }
         }
+        /**
+         * @brief builder class for computing a linear filter
+        */
         template<class T>
         class lfilter
         {
         public:
             lfilter() : _axis(-1)
             {}
-
+            /**
+             * @brief sets the axis to compute the filter on this is defaulted to -1 if the filter runs without setting this parameter
+             * @pram axis the axis which to compute the filter of the incomping expression
+            */
             lfilter& set_axis(std::ptrdiff_t axis)
             {
                 _axis = axis;
                 return *this;
             }
+            /**
+             * @brief sets the initial conditions of the filter
+             * @details Setting this by solving for a filters steady state response can improve results for edge conditions especially for long filters
+             * @param zi the initial accumulator values to be used at the start of the filter's computation
+            */
             template<class E1>
             lfilter& set_zi(E1&& zi)
             {
                 _zi = zi;
                 return *this;
             }
+            /**
+             * @brief sets the coefficients of the filter to be computed. This must be called prior to computing the filter.
+             * @param b the numerator of the filter
+             * @param a the denominator of the filter
+            */
             template<class E1, class E2>
             lfilter& set_coeffs(E1&& b, E2&& a)
             {
@@ -70,6 +87,11 @@ namespace xt {
                 _b = std::make_optional(b);
                 return *this;
             }
+            /**
+             * @brief computes the flter as defined in the builder
+             * @param x a data expression which is not of zero length
+             * @throws runtime_error if a and b are not set prior to calling the filter
+            */
             template<class E1>
             auto operator()(E1&& x)
             {
