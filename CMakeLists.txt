@@ -68,6 +68,7 @@ find_package(xtensor-blas)
 set(XTENSOR_SIGNAL_HEADERS
     ${XTENSOR_SIGNAL_INCLUDE_DIR}/xtensor-signal/xtensor_signal.hpp
     ${XTENSOR_SIGNAL_INCLUDE_DIR}/xtensor-signal/find_peaks.hpp
+    ${XTENSOR_SIGNAL_INCLUDE_DIR}/xtensor-signal/lfilter.hpp
     )
 
 add_library(xtensor-signal INTERFACE)
@@ -79,9 +80,14 @@ target_include_directories(xtensor-signal INTERFACE
 target_link_libraries(xtensor-signal INTERFACE xtensor xsimd xtensor-blas)
 
 OPTION(BUILD_TESTS "xtensor test suite" OFF)
+OPTION(BUILD_BENCHMARKS "xtensor benchmarks" OFF)
 
 if(BUILD_TESTS)
     add_subdirectory(test)
+endif()
+
+if(BUILD_BENCHMARKS)
+    add_subdirectory(benchmark)
 endif()
 
 # Installation

@@ -105,6 +105,7 @@ namespace xt {
                 auto begin = xt::axis_slice_begin(x, saxis);
                 auto end = xt::axis_slice_end(x, saxis);
                 auto iter_out = xt::axis_slice_begin(out, saxis);
+                //this loop can be multihreaded... TBB???
                 for (auto iter = begin; iter != end; iter++)
                 {
                     (*iter_out++) = detail::df2_transposed(_b.value(), _a.value(), *iter, _zi);
