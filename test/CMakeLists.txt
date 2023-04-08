@@ -38,6 +38,7 @@ find_package(Threads)
 set(XTENSOR_SIGNAL_TESTS
     main.cpp
     test_config.cpp
+    lfilter_test.cpp
     find_peaks_test.cpp
 )
 
