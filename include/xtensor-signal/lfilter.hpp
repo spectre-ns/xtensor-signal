@@ -9,14 +9,19 @@ namespace xt {
         namespace detail{
             /**
              * @brief compute direct form 2 transposed topology
-             * @todo benchmark inner implementation against the scipy equivalent.
             */
             template<typename E1, typename E2, typename E3, typename E4>
             auto df2_transposed(E1&& b, E2&& a, E3&& x, E4 zi)
             {
                 using value_type = typename std::decay_t<E3>::value_type;
                 xt::xtensor<value_type, 1> out = xt::zeros<value_type>({ x.shape(0) });
+                //use pointers to avoid the indirection of using xexpressions
+                auto pout = out.data();
+                auto pa = a.data();
+                auto pb = b.data();
+                auto px = x.data();
 
+                //this vectorizes in llvm but not MSVC
                 for (int i = 0; i < x.shape(0); i++)
                 {
                     value_type tmp = 0;
@@ -28,20 +33,18 @@ namespace xt {
                     {
                         if (!(i - j < 0))
                         {
-                            tmp += b(j) * x(i - j);
+                            tmp += pb[j] * px[i - j];
                         }
                     }
-
                     for (int j = 1; j < a.shape(0); j++)
                     {
                         if (!(i - j < 0))
                         {
-                            tmp -= a(j) * out(i - j);
+                            tmp -= pa[j] * pout[i - j];
                         }
                     }
-
-                    tmp /= a(0);
-                    out(i) = tmp;
+                    tmp /= pa[0];
+                    pout[i] = tmp;
                 }
                 return out;
             }
@@ -83,6 +86,14 @@ namespace xt {
             template<class E1, class E2>
             lfilter& set_coeffs(E1&& b, E2&& a)
             {
+                if(a(0) == 0)
+                {
+                    throw std::runtime_error("Potential division by zero a(0) cannot be zero");
+                }
+                if(a.dimension() != 1 || b.dimension() != 1)
+                {
+                    throw std::runtime_error("a and b must be 1 dimention");
+                }
                 _a = std::make_optional(a);
                 _b = std::make_optional(b);
                 return *this;

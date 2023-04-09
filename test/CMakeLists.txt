@@ -46,6 +46,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${_cxx_std_flag} /MP /bigobj")
 endif()
 
+#Take care of MSVC here. This won't be the right spot on MSVC (Not clang)
 file(COPY "test_data" DESTINATION "${CMAKE_BINARY_DIR}/test")
 
 add_executable(test_xtensor_signal ${XTENSOR_SIGNAL_TESTS} ${XTENSOR_SIGNAL_HEADERS})

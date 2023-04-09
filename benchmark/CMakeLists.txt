@@ -26,7 +26,9 @@ if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 endif ()
 
 message(STATUS "Forcing tests build type to Release")
-set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+
+#Generate debug info for profiling
+set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Choose the type of build." FORCE)
 
 include(CheckCXXCompilerFlag)
 
@@ -43,7 +45,8 @@ if (xsimd_FOUND)
     include_directories(${xsimd_INCLUDE_DIRS})
     add_definitions("-DXTENSOR_USE_XSIMD=1")
 endif()
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${_cxx_std_flag} -march=tigerlake")
+
+
 set(XTENSOR_SIGNAL_BENCHMARKS
     main.cpp
     lfilter_benchmark.cpp
